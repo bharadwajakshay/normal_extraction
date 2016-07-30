@@ -16,8 +16,13 @@ normal_extractor::normal_extractor()
 	pub_coeff = nh.advertise<pcl_msgs::ModelCoefficients>("plane_coeff_y",1000);
 	pub_angle_plane = nh.advertise<std_msgs::Float64>("angle_plane",1000);
 	pub_angle_imu = nh.advertise<std_msgs::Float64>("angle_imu",1000);
+	angle_imu.data=0;
+	angle_plane.data = 0;
 	first_msg = true;
+	first_msg_imu = true;
 	rms_value = 0;
+	current_time =0;
+	previous_time =0;
 
 
 }
@@ -144,5 +149,19 @@ void normal_extractor::callbackpointcloud(const sensor_msgs::PointCloud2::ConstP
 
 void normal_extractor::callbackimu(const xsens_slim::imuX::ConstPtr& msg)
 {
-	msg->
+	double yaw_vel = msg->gyro.z - imu_bias_yaw;
+	current_time = msg->header.stamp.toSec();
+	if (first_msg_imu)
+	{
+		previous_time=current_time;
+		first_msg_imu = false;
+	}
+	else
+	{
+		double dt=current_time - previous_time;
+		previous_time = current_time;
+		angle_imu.data = angle_imu.data-((dt * yaw_vel)* (180/M_PI));
+		pub_angle_imu.publish(angle_imu);
+	}
+
 }

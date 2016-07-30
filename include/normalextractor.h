@@ -72,6 +72,7 @@
 #include <math.h>
 #include <xsens_slim/imuX.h>
 
+#define imu_bias_yaw 0.017156139726883
 
 using namespace Eigen;
 
@@ -86,8 +87,10 @@ public:
 	pcl_msgs::ModelCoefficients ros_coeff;
 	pcl_msgs::ModelCoefficients first_coeff;
 	std_msgs::Float64 angle_plane;
-	bool first_msg;
+	bool first_msg, first_msg_imu;
 	double rms_value;
+	double previous_time, current_time;
+	std_msgs::Float64 angle_imu;
 private:
 	ros::NodeHandle nh;
 	ros::Subscriber sub_pc;
@@ -97,6 +100,7 @@ private:
 	ros::Publisher pub_coeff;
 	ros::Publisher pub_angle_plane;
 	ros::Publisher pub_angle_imu;
+
 
 };
 
