@@ -8,10 +8,11 @@ find_package(catkin REQUIRED
   roscpp
   rospy
   std_msgs
+  xsens_slim
 )
 
 catkin_package(
-  CATKIN_DEPENDS roscpp rospy std_msgs pcl_conversions pcl_ros custom_msgs
+  CATKIN_DEPENDS roscpp rospy std_msgs pcl_conversions pcl_ros xsens_slim custom_msgs
 )
 ###########
 ## Build ##

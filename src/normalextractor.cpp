@@ -10,9 +10,14 @@
 normal_extractor::normal_extractor()
 {
 	sub_pc = nh.subscribe("/structure/depth/points",1000,&normal_extractor::callbackpointcloud,this);
+	sub_imu = nh.subscribe("/imuX",1000,&normal_extractor::callbackimu,this);
 	pub_pcy = nh.advertise<pcl::PointCloud<pcl::PointXYZI> >("plane_y", 1000);
 	pub_pcz = nh.advertise<pcl::PointCloud<pcl::PointXYZI> >("plane_z", 1000);
 	pub_coeff = nh.advertise<pcl_msgs::ModelCoefficients>("plane_coeff_y",1000);
+	pub_angle_plane = nh.advertise<std_msgs::Float64>("angle_plane",1000);
+	pub_angle_imu = nh.advertise<std_msgs::Float64>("angle_imu",1000);
+	first_msg = true;
+	rms_value = 0;
 
 
 }
@@ -91,6 +96,12 @@ void normal_extractor::callbackpointcloud(const sensor_msgs::PointCloud2::ConstP
 							<<coefficients->values[1]<<"\t"<<coefficients->values[2]<<"\t"
 							<<coefficients->values[3]<<std::endl;
 					pcl_conversions::fromPCL(*coefficients,ros_coeff);
+					if(first_msg)
+					{
+						first_coeff = ros_coeff;
+						first_msg = false;
+						rms_value = sqrt((pow((double)first_coeff.values[1],2)+pow((double)first_coeff.values[2],2)+pow((double)first_coeff.values[3],2)));
+					}
 					pub_coeff.publish(ros_coeff);
 				}
 			else
@@ -123,5 +134,15 @@ void normal_extractor::callbackpointcloud(const sensor_msgs::PointCloud2::ConstP
 	pub_pcy.publish(y_plane);
 	pub_pcz.publish(z_plane);
 
+	//claulating the angle between 1st normal and consequent normals
+	double num=abs((double)((first_coeff.values[1]*ros_coeff.values[1])+(first_coeff.values[2]*ros_coeff.values[2])+(first_coeff.values[3]*ros_coeff.values[3])));
+	double den = rms_value *sqrt((pow((double)ros_coeff.values[1],2)+pow((double)ros_coeff.values[2],2)+pow((double)ros_coeff.values[3],2)));
+	angle_plane.data =acos(num/den)*(180/M_PI);
+	pub_angle_plane.publish(angle_plane);
 
+}
+
+void normal_extractor::callbackimu(const xsens_slim::imuX::ConstPtr& msg)
+{
+	msg->
 }
