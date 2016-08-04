@@ -91,6 +91,7 @@ public:
 	double rms_value;
 	double previous_time, current_time;
 	std_msgs::Float64 angle_imu;
+	double angle_first;
 private:
 	ros::NodeHandle nh;
 	ros::Subscriber sub_pc;

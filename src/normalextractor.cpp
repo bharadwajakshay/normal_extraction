@@ -23,6 +23,7 @@ normal_extractor::normal_extractor()
 	rms_value = 0;
 	current_time =0;
 	previous_time =0;
+	angle_first = 0;
 
 
 }
@@ -104,7 +105,7 @@ void normal_extractor::callbackpointcloud(const sensor_msgs::PointCloud2::ConstP
 					if(first_msg)
 					{
 						first_coeff = ros_coeff;
-						first_msg = false;
+						//first_msg = false;
 						rms_value = sqrt((pow((double)first_coeff.values[1],2)+pow((double)first_coeff.values[2],2)+pow((double)first_coeff.values[3],2)));
 					}
 					pub_coeff.publish(ros_coeff);
@@ -141,8 +142,16 @@ void normal_extractor::callbackpointcloud(const sensor_msgs::PointCloud2::ConstP
 
 	//claulating the angle between 1st normal and consequent normals
 	double num=abs((double)((first_coeff.values[1]*ros_coeff.values[1])+(first_coeff.values[2]*ros_coeff.values[2])+(first_coeff.values[3]*ros_coeff.values[3])));
-	double den = rms_value *sqrt((pow((double)ros_coeff.values[1],2)+pow((double)ros_coeff.values[2],2)+pow((double)ros_coeff.values[3],2)));
-	angle_plane.data =acos(num/den)*(180/M_PI);
+	double rms_value2 =sqrt((pow((double)ros_coeff.values[1],2)+pow((double)ros_coeff.values[2],2)+pow((double)ros_coeff.values[3],2)));
+	double den = rms_value * rms_value2;
+	double angle = acos(num/den) * (180/M_PI);
+	// Correcting for the offset (Check why you are getting an offset)
+	if(first_msg)
+	{
+		angle_first = angle;
+		first_msg = false;
+	}
+	angle_plane.data = angle - angle_first;
 	pub_angle_plane.publish(angle_plane);
 
 }

@@ -8,5 +8,5 @@
 
 
 	#################play ros bag#################
-	<node pkg="rosbag" type="play" name="player" output="screen" args="--clock /home/akshay/catkin_ws/bags/xsense_occipital.bag"/>
+	<node pkg="rosbag" type="play" name="player" output="screen" args="--clock /home/nuc/catkin_ws/Bags/xsense_occipital.bag"/>
 </launch>
