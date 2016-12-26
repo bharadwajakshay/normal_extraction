@@ -9,6 +9,7 @@ find_package(catkin REQUIRED
   rospy
   std_msgs
   xsens_slim
+  geometry_msgs
 )
 
 catkin_package(

@@ -8,5 +8,5 @@
 
 
 	#################play ros bag#################
-	<node pkg="rosbag" type="play" name="player" output="screen" args="--clock /home/nuc/catkin_ws/Bags/imu_calib_pc1.bag"/>
+	<node pkg="rosbag" type="play" name="player" output="screen" args="--clock --rate=0.5 /home/nuc/catkin_ws/Bags/imu_calib_pc1.bag"/>
 </launch>

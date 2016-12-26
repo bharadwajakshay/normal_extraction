@@ -18,6 +18,7 @@
 #include <geometry_msgs/PoseArray.h>
 #include <geometry_msgs/PoseWithCovarianceStamped.h>
 #include <geometry_msgs/Pose2D.h>
+#include <geometry_msgs/Vector3Stamped.h>
 #include <nav_msgs/OccupancyGrid.h>
 
 #include <image_transport/image_transport.h>
@@ -74,6 +75,9 @@
 
 #define imu_bias_yaw 0.017156139726883
 
+extern std::string topic_pc;
+extern std::string topic_imu;
+
 using namespace Eigen;
 
 class normal_extractor {
@@ -82,6 +86,10 @@ public:
 	virtual ~normal_extractor();
 	void callbackpointcloud(const sensor_msgs::PointCloud2::ConstPtr& msg);
 	void callbackimu(const xsens_slim::imuX::ConstPtr& msg);
+	// Addidng functions to calcluate the iMU rpy
+	Eigen::Matrix3d EulerToDCM(Vector3d rpy);
+	Eigen::Vector3d DCMToEuler(Matrix3d Cbn);
+	Eigen::Matrix3d NormalizeDCM(Matrix3d DCM);
 	pcl::PointCloud<pcl::PointXYZI> y_plane;
 	pcl::PointCloud<pcl::PointXYZI> z_plane;
 	pcl_msgs::ModelCoefficients ros_coeff;
@@ -91,7 +99,14 @@ public:
 	double rms_value;
 	double previous_time, current_time;
 	std_msgs::Float64 angle_imu;
-	double angle_first;
+	double angle_first, angle_first_imu;
+	Eigen::Matrix3d Cbn;
+	Eigen::Vector3d rpy;
+	double rpy_timetag;
+	Eigen::Vector3d chi_bias;
+	Eigen::Vector3d accel_bias;
+	Eigen::Vector3d imu_angle;
+
 private:
 	ros::NodeHandle nh;
 	ros::Subscriber sub_pc;
