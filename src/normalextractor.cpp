@@ -44,13 +44,16 @@ void normal_extractor::callbackpointcloud(const sensor_msgs::PointCloud2::ConstP
 	pcl_conversions::toPCL(*msg,pcl_pc2);
 
     pcl::PointCloud<pcl::PointXYZ>::Ptr plane_find_pc(new pcl::PointCloud<pcl::PointXYZ>);
+    pcl::PointCloud<pcl::PointXYZ>::Ptr svd_plane(new pcl::PointCloud<pcl::PointXYZ>);
 
     // Convert to PCL PointCloud structure
 	pcl::fromPCLPointCloud2(pcl_pc2,*plane_find_pc);
+	pcl::fromPCLPointCloud2(pcl_pc2,*svd_plane);
 
 	//Clean up the point cloud
 	std::vector<int> indices_nan;
 	pcl::removeNaNFromPointCloud(*plane_find_pc,*plane_find_pc,indices_nan);
+	pcl::removeNaNFromPointCloud(*svd_plane,*svd_plane,indices_nan);
 
 	//add time tag into the inertial message
 	geometry_msgs::Vector3Stamped plane_angle;
@@ -167,6 +170,33 @@ void normal_extractor::callbackpointcloud(const sensor_msgs::PointCloud2::ConstP
 	plane_angle.vector.y = 0.0;
 	plane_angle.vector.z = angle - angle_first;
 	pub_angle_plane.publish(plane_angle);
+	Eigen::VectorXd svd_normals = this->plane_est_svd(svd_plane);
+	std::cout<<"The normal coefficents calculated using svd are\t"<<svd_normals.transpose()<<std::endl;
+
+
+}
+
+Eigen::VectorXd normal_extractor::plane_est_svd(pcl::PointCloud<pcl::PointXYZ>::ConstPtr point_cloud)
+{
+	Eigen::MatrixXd points_3D(3,point_cloud->width);
+	//assigning the points from point cloud to matrix
+	for (int i=0;i<point_cloud->width;i++)
+	{
+		points_3D(0,i) = point_cloud->at(i).x;
+		points_3D(1,i) = point_cloud->at(i).y;
+		points_3D(2,i) = point_cloud->at(i).z;
+	}
+	// calcaulating the centroid of the pointcloud
+	Eigen::MatrixXd centroid = points_3D.rowwise().mean();
+	//std::cout<<"The centroid of the pointclouds is given by:\t"<<centroid<<std::endl;
+	//subtract the centroid from points
+	points_3D.row(0).array() -= centroid(0);
+	points_3D.row(1).array() -= centroid(1);
+	points_3D.row(2).array() -= centroid(2);
+	//calculate the SVD of points_3D matrix
+	Eigen::JacobiSVD<Eigen::MatrixXd> svd(points_3D,Eigen::ComputeThinU);
+	Eigen::VectorXd normals=svd.matrixU().col(2);
+	return(normals);
 
 }
 
