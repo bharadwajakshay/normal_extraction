@@ -87,7 +87,7 @@ public:
 	void callbackpointcloud(const sensor_msgs::PointCloud2::ConstPtr& msg);
 	void callbackimu(const xsens_slim::imuX::ConstPtr& msg);
 	//Additional function for verification
-	Eigen::VectorXd plane_est_svd(pcl::PointCloud<pcl::PointXYZ>::ConstPtr point_cloud);
+	pcl::ModelCoefficients plane_est_svd(pcl::PointCloud<pcl::PointXYZ>::ConstPtr point_cloud);
 
 	// Addidng functions to calcluate the iMU rpy
 	Eigen::Matrix3d EulerToDCM(Vector3d rpy);

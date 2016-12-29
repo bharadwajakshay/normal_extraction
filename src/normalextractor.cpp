@@ -170,13 +170,15 @@ void normal_extractor::callbackpointcloud(const sensor_msgs::PointCloud2::ConstP
 	plane_angle.vector.y = 0.0;
 	plane_angle.vector.z = angle - angle_first;
 	pub_angle_plane.publish(plane_angle);
-	Eigen::VectorXd svd_normals = this->plane_est_svd(svd_plane);
-	std::cout<<"The normal coefficents calculated using svd are\t"<<svd_normals.transpose()<<std::endl;
+	pcl::ModelCoefficients svd_normals;
+	svd_normals= this->plane_est_svd(svd_plane);
+	std::cout<<"The normal coefficents calculated using svd are\t"<<svd_normals.values[0]<<"\t"
+									<<svd_normals.values[1]<<"\t"<<svd_normals.values[2]<<"\t"<<svd_normals.values[3]<<std::endl;
 
 
 }
 
-Eigen::VectorXd normal_extractor::plane_est_svd(pcl::PointCloud<pcl::PointXYZ>::ConstPtr point_cloud)
+pcl::ModelCoefficients normal_extractor::plane_est_svd(pcl::PointCloud<pcl::PointXYZ>::ConstPtr point_cloud)
 {
 	Eigen::MatrixXd points_3D(3,point_cloud->width);
 	//assigning the points from point cloud to matrix
@@ -186,18 +188,34 @@ Eigen::VectorXd normal_extractor::plane_est_svd(pcl::PointCloud<pcl::PointXYZ>::
 		points_3D(1,i) = point_cloud->at(i).y;
 		points_3D(2,i) = point_cloud->at(i).z;
 	}
+
 	// calcaulating the centroid of the pointcloud
 	Eigen::MatrixXd centroid = points_3D.rowwise().mean();
 	//std::cout<<"The centroid of the pointclouds is given by:\t"<<centroid<<std::endl;
+
 	//subtract the centroid from points
 	points_3D.row(0).array() -= centroid(0);
 	points_3D.row(1).array() -= centroid(1);
 	points_3D.row(2).array() -= centroid(2);
-	//calculate the SVD of points_3D matrix
-	Eigen::JacobiSVD<Eigen::MatrixXd> svd(points_3D,Eigen::ComputeThinU);
-	Eigen::VectorXd normals=svd.matrixU().col(2);
-	return(normals);
 
+	//calculate the SVD of points_3D matrix
+	Eigen::JacobiSVD<Eigen::MatrixXd> svd(points_3D,Eigen::ComputeFullU);
+	Eigen::MatrixXd U_MAT = svd.matrixU();
+	//std::cout<<"U matrix transpose is:"<<U_MAT<<std::endl<<std::endl<<"U matrix is:"<<svd.matrixU()<<std::endl;
+
+	/*********************************************************************************************
+	 * caculating d by sybstituting the centroid back in the quation
+	 * 		aCx+bCy+cCz = -d
+	 ********************************************************************************************/
+	//double d = -((U_MAT(0,2)*points_3D(0,1))+ (U_MAT(1,2)*points_3D(1,1)) + (U_MAT(1,2)*points_3D(1,2)));
+	double d = -((U_MAT(0,2)*centroid(0))+ (U_MAT(1,2)*centroid(1)) + (U_MAT(2,2)*centroid(2)));
+
+	pcl::ModelCoefficients normals;
+	normals.values.push_back(U_MAT(0,2));
+	normals.values.push_back(U_MAT(1,2));
+	normals.values.push_back(U_MAT(2,2));
+	normals.values.push_back(d);
+	return(normals);
 }
 
 Matrix3d normal_extractor::NormalizeDCM(Matrix3d DCM)
